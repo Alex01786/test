@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+    <title>HLS Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+    <video
+        id="video"
+        controls
+        playsinline
+        style="width:100%;max-width:1000px;background:#000"
+    ></video>
+
+    <select id="quality">
+        <option value="https://transcoded-videos.classx.co.in/videos/vibrantacademykota-data/3556899-1776168820/hls-b35203/480p/master-3736240.5181990475.m3u8">
+            720p
+        </option>
+        <option value="https://transcoded-videos.classx.co.in/videos/vibrantacademykota-data/3556899-1776168820/hls-b35203/480p/master-3736240.5181990475.m3u8">
+            480p
+        </option>
+        <option value="https://transcoded-videos.classx.co.in/videos/vibrantacademykota-data/3556899-1776168820/hls-b35203/480p/master-3736240.5181990475.m3u8">
+            360p
+        </option>
+    </select>
+
+    <script>
+        const video = document.getElementById("video");
+        const selector = document.getElementById("quality");
+
+        let hls = null;
+
+const playbackHeaders = {
+    "Referer": "https://player.akamai.net.in/"
+};
+
+function loadVideo(url) {
+    hls?.destroy();
+    hls = null;
+
+    if (Hls.isSupported()) {
+        hls = new Hls({
+            xhrSetup(xhr) {
+                Object.entries(playbackHeaders).forEach(
+                    ([name, value]) => {
+                        xhr.setRequestHeader(name, value);
+                    }
+                );
+
+                // Required only for cookies/session authentication.
+                xhr.withCredentials = true;
+            }
+        });
+
+        hls.on(Hls.Events.ERROR, (_, data) => {
+            console.error("HLS error:", {
+                type: data.type,
+                details: data.details,
+                fatal: data.fatal,
+                responseCode: data.response?.code
+            });
+        });
+
+        hls.loadSource(url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => {
+                console.log("Press Play to begin");
+            });
+        });
+
+        return;
+    }
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        /*
+         * Native Safari HLS cannot attach arbitrary JavaScript headers
+         * to <video src>. Use cookies or a backend/proxy for that case.
+         */
+        video.src = url;
+        return;
+    }
+
+    console.error("HLS is unsupported");
+}
+
+        selector.addEventListener("change", () => {
+            loadVideo(selector.value);
+        });
+
+        loadVideo(selector.value);
+    </script>
+</body>
+</html>
